@@ -1,0 +1,4 @@
+<xml>
+    <Class  name="txt"><subclass name="stxt"><max max="1.23" min="0.45" /></subclass></Class >
+    <Class  name="txt1"><subclass name="stxt1"><max1 max="1.53" min="0.75" /></subclass></Class >
+</xml>
