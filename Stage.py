@@ -53,15 +53,15 @@ def Apache(parser,path):
                 vendor2 = 'apache'
                 vendor = groupId[0]
             if vendor2=='':
-                AddToParseList(vendor2+'/'+package['ns0:artifactId'],        package['ns0:version'],idx+1)
-                AddToParseList(vendor2+'/'+package['ns0:artifactId'].replace('-','_'),  package['ns0:version'],idx+1)
-                AddToParseList(vendor2.replace('-', '_')+'/'+package['ns0:artifactId'],        package['ns0:version'],idx+1)
-                AddToParseList(vendor2.replace('-', '_')+'/'+package['ns0:artifactId'].replace('-','_'),  package['ns0:version'],idx+1)
+                AddToParseList(vendor2+'/'+package['ns0:artifactId'],        package['ns0:version'])
+                AddToParseList(vendor2+'/'+package['ns0:artifactId'].replace('-','_'),  package['ns0:version'])
+                AddToParseList(vendor2.replace('-', '_')+'/'+package['ns0:artifactId'],        package['ns0:version'])
+                AddToParseList(vendor2.replace('-', '_')+'/'+package['ns0:artifactId'].replace('-','_'),  package['ns0:version'])
                 idx=idx+4
-            AddToParseList(vendor + '/' + package['ns0:artifactId'],  package['ns0:version'],idx+1)
-            AddToParseList(vendor + '/' + package['ns0:artifactId'].replace('-', '_'),  package['ns0:version'],idx+1)
-            AddToParseList(vendor.replace('-', '_') + '/' + package['ns0:artifactId'], package['ns0:version'],idx+1)
-            AddToParseList(vendor.replace('-', '_') + '/' + package['ns0:artifactId'].replace('-', '_'), package['ns0:version'],idx+1)
+            AddToParseList(vendor + '/' + package['ns0:artifactId'],  package['ns0:version'])
+            AddToParseList(vendor + '/' + package['ns0:artifactId'].replace('-', '_'),  package['ns0:version'])
+            AddToParseList(vendor.replace('-', '_') + '/' + package['ns0:artifactId'], package['ns0:version'])
+            AddToParseList(vendor.replace('-', '_') + '/' + package['ns0:artifactId'].replace('-', '_'), package['ns0:version'])
             idx = idx + 4
 
 
@@ -69,14 +69,14 @@ def Laravel(parser,path):
     if not os.path.exists(path):
         parser.error("The file %s does not exist!" % path)
     else:
-        if not path.endswith('.lokc'):
+        if not path.endswith('.lock'):
             parser.error("The file %s is not .lock file" % path)
             return
         with open(path) as jsonFile:
             jsonObject = json.load(jsonFile)
             jsonFile.close()
         for idx, package in enumerate(jsonObject['packages']):
-            AddToParseList(package['name'], package['version'],idx)
+            AddToParseList(package['name'], package['version'])
 
 
 
@@ -165,6 +165,7 @@ def CheckWithKeyWord():
                         for cpeMatch in cpe['cpe_match']:
                             string = (cpeMatch['cpe23Uri']).split(':')
                             CheckCpe(string, vendor, result,cpeMatch)
+
         else:
             print(str(contents.status_code) + ' error ')
 def CheckWithCpe():
@@ -178,20 +179,30 @@ def CheckWithCpe():
                 if 'result' in test:
                     for result in test['result']['CVE_Items']:
                         addtoList(vendor, package, result, nameVendors[vendor][package])
-                        print(reportList)
-
             else:
                 print(str(contents.status_code) + ' error ')
-def AddToParseList (name,version,idx):
-    global listParse
-    listParse[idx] = {
-        'name': name,
-        'version': version
-    }
+def AddToParseList (name,version):
+    global nameVendors
+
+    exp = name.split("/", 1)
+    version = version.replace('v', '')
+    if exp[0] in nameVendors:
+        nameVendors[exp[0]][exp[1]] = version
+    else:
+        nameVendors[exp[0]] = {exp[1]: version}
 def ReportJson():
     global reportList
-    jsonfile = open("vulnerability.json", "w")
-    json.dump(reportList, jsonfile, indent=4, sort_keys=False)
+    with open('packages.json') as jsonFile:
+        jsonObject = json.load(jsonFile)
+        jsonFile.close()
+    if 'json' in jsonObject :
+        jsonreport={}
+        for cve in reportList :
+            for report in jsonObject['json']['placement']:
+                jsonreport[jsonObject['json']['placement'][report]]=reportList[cve][report]
+
+        jsonfile = open(jsonObject['json']['output']+"/"+jsonObject['json']['template'], "w")
+        json.dump(jsonreport, jsonfile, indent=4, sort_keys=False)
 
 def indent(elem, level=0):
     i = "\n" + level*"  "
@@ -211,60 +222,69 @@ def indent(elem, level=0):
 def ReportXml():
     global reportList
     first = ET.Element('Report')
+    with open('packages.json') as jsonFile:
+        jsonObject = json.load(jsonFile)
+        jsonFile.close()
+    if 'xml' in jsonObject:
+        placement=jsonObject['xml']['placement']
+        for name in reportList:
+            r = e.SubElement(first, 'CVE')
+            e.SubElement(r, 'package').text = str(name)
+            if 'cve_id' in placement:
+                e.SubElement(r,placement['cve_id']).text = str(reportList[name]['cve_id'])
+            if 'publishedDate'in placement:
+                e.SubElement(r,placement['publishedDate']).text = str(reportList[name]['publishedDate'])
+            if 'lastModifiedDate' in placement:
+                e.SubElement(r,placement['lastModifiedDate']).text = str(reportList[name]['lastModifiedDate'])
+            if 'version'in placement:
+                e.SubElement(r,placement['version']).text = str(reportList[name]['version'])
 
-    for name in reportList:
-        r = e.SubElement(first, 'CVE')
-        print(name)
-        e.SubElement(r, 'package').text = str(name)
 
-        e.SubElement(r,'cve_id').text = str(reportList[name]['cve_id'])
-        e.SubElement(r,'publishedDate').text = str(reportList[name]['publishedDate'])
-        e.SubElement(r,'lastModifiedDate').text = str(reportList[name]['lastModifiedDate'])
-        e.SubElement(r,'version').text = str(reportList[name]['version'])
+            if 'description_data'in placement:
+
+                description_data=e.SubElement(r,placement['description_data'])
 
 
+                for z in reportList[name]['description_data']:
+                    e.SubElement(description_data, "lang").text = str(z["lang"])
+                    e.SubElement(description_data, "value").text = str(z["value"])
+            if 'cwe'in placement:
+                cwe=e.SubElement(r,placement['cwe'])
 
-        description_data=e.SubElement(r,'description_data')
+                for z in reportList[name]['cwe']:
+                    description = e.SubElement(cwe, 'description')
+                    for res in z['description']:
+                        e.SubElement(description, "lang").text = str(res["lang"])
+                        e.SubElement(description, "value").text = str(res["value"])
+            if 'baseMetricV3' in placement:
+                baseMetricV3 = e.SubElement(r, placement['baseMetricV3'])
+                e.SubElement(baseMetricV3, 'exploitabilityScore').text = str(reportList[name]['baseMetricV3']['exploitabilityScore'])
+                e.SubElement(baseMetricV3, 'impactScore').text = str(reportList[name]['baseMetricV3']['impactScore'])
+                cvssV3 = e.SubElement(baseMetricV3, 'cvssV3')
+                for n in reportList[name]['baseMetricV3']['cvssV3']:
+                    e.SubElement(cvssV3, n).text = str(reportList[name]['baseMetricV3']['cvssV3'][n])
+            if 'baseMetricV2' in placement:
+                baseMetricV2 = e.SubElement(r,placement ['baseMetricV2'])
 
+                e.SubElement(baseMetricV3, 'severity').text = str(reportList[name]['baseMetricV2']['severity'])
+                e.SubElement(baseMetricV3, 'exploitabilityScore').text = str(reportList[name]['baseMetricV2']['exploitabilityScore'])
+                e.SubElement(baseMetricV3, 'impactScore').text = str(reportList[name]['baseMetricV2']['impactScore'])
+                e.SubElement(baseMetricV3, 'obtainAllPrivilege').text = str(reportList[name]['baseMetricV2']['obtainAllPrivilege'])
+                e.SubElement(baseMetricV3, 'obtainUserPrivilege').text = str(reportList[name]['baseMetricV2']['obtainUserPrivilege'])
+                e.SubElement(baseMetricV3, 'obtainOtherPrivilege').text = str(reportList[name]['baseMetricV2']['obtainOtherPrivilege'])
+                e.SubElement(baseMetricV3, 'userInteractionRequired').text = str(reportList[name]['baseMetricV2']['userInteractionRequired'])
+                cvssV2 = e.SubElement(baseMetricV2, 'cvssV2')
+                for n in reportList[name]['baseMetricV2']['cvssV2']:
+                    e.SubElement(cvssV2, n).text = str(reportList[name]['baseMetricV2']['cvssV2'][n])
+            indent(r)
 
-        for z in reportList[name]['description_data']:
-            e.SubElement(description_data, "lang").text = str(z["lang"])
-            e.SubElement(description_data, "value").text = str(z["value"])
+        a = e.ElementTree(first)
 
-        cwe=e.SubElement(r,'cwe')
-
-        for z in reportList[name]['cwe']:
-            description = e.SubElement(cwe, 'description')
-            for res in z['description']:
-                e.SubElement(description, "lang").text = str(res["lang"])
-                e.SubElement(description, "value").text = str(res["value"])
-        baseMetricV3 = e.SubElement(r, 'baseMetricV3')
-        e.SubElement(baseMetricV3, 'exploitabilityScore').text = str(reportList[name]['baseMetricV3']['exploitabilityScore'])
-        e.SubElement(baseMetricV3, 'impactScore').text = str(reportList[name]['baseMetricV3']['impactScore'])
-        cvssV3 = e.SubElement(baseMetricV3, 'cvssV3')
-        for n in reportList[name]['baseMetricV3']['cvssV3']:
-            e.SubElement(cvssV3, n).text = str(reportList[name]['baseMetricV3']['cvssV3'][n])
-
-        baseMetricV2 = e.SubElement(r, 'baseMetricV2')
-
-        e.SubElement(baseMetricV3, 'severity').text = str(reportList[name]['baseMetricV2']['severity'])
-        e.SubElement(baseMetricV3, 'exploitabilityScore').text = str(reportList[name]['baseMetricV2']['exploitabilityScore'])
-        e.SubElement(baseMetricV3, 'impactScore').text = str(reportList[name]['baseMetricV2']['impactScore'])
-        e.SubElement(baseMetricV3, 'obtainAllPrivilege').text = str(reportList[name]['baseMetricV2']['obtainAllPrivilege'])
-        e.SubElement(baseMetricV3, 'obtainUserPrivilege').text = str(reportList[name]['baseMetricV2']['obtainUserPrivilege'])
-        e.SubElement(baseMetricV3, 'obtainOtherPrivilege').text = str(reportList[name]['baseMetricV2']['obtainOtherPrivilege'])
-        e.SubElement(baseMetricV3, 'userInteractionRequired').text = str(reportList[name]['baseMetricV2']['userInteractionRequired'])
-        cvssV2 = e.SubElement(baseMetricV2, 'cvssV2')
-        for n in reportList[name]['baseMetricV2']['cvssV2']:
-            e.SubElement(cvssV2, n).text = str(reportList[name]['baseMetricV2']['cvssV2'][n])
-        indent(r)
-
-    a = e.ElementTree(first)
-
-    a.write("json_to_xml.xml",encoding="utf-8", xml_declaration=True)
+        a.write("json_to_xml.xml",encoding="utf-8", xml_declaration=True)
 
 if __name__=='__main__':
-    listParse = {}
+    nameVendors = {}
+
     parser = argparse.ArgumentParser(description="ikjMatrix multiplication")
     # parser.add_argument("-i", dest="filename", required=True,
     #                     help="input file with two matrices", metavar="FILE",
@@ -282,23 +302,13 @@ if __name__=='__main__':
 
 
     ######## Save File of packages as json
-    out_file = open("packages.json", "w")
-    json.dump(listParse, out_file, indent=4, sort_keys=False)
-    out_file.close()
 
 
 
-    nameVendors = {}
 
 
-    for index in listParse:
-        exp = listParse[index]['name'].split("/", 1)
-        version = listParse[index]['version'].replace('v', '')
-        if exp[0] in nameVendors:
-            lens = len(nameVendors[exp[0]])
-            nameVendors[exp[0]][exp[1]] = version
-        else:
-            nameVendors[exp[0]] = {exp[1]: version}
+    # add to AddToParseList changement
+
 
     reportList = {}
     CheckWithCpe()

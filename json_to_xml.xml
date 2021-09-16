@@ -1,2 +1,70 @@
 <?xml version='1.0' encoding='utf-8'?>
-<Report />
+<Report><CVE>
+  <package>doctrine/cache</package>
+  <cve_id>CVE-2015-5723</cve_id>
+  <publishedDate>2016-06-07T14:06Z</publishedDate>
+  <lastModifiedDate>2016-11-28T19:35Z</lastModifiedDate>
+  <description_data>
+    <lang>en</lang>
+    <value>Doctrine Annotations before 1.2.7, Cache before 1.3.2 and 1.4.x before 1.4.2, Common before 2.4.3 and 2.5.x before 2.5.1, ORM before 2.4.8 or 2.5.x before 2.5.1, MongoDB ODM before 1.0.2, and MongoDB ODM Bundle before 3.0.1 use world-writable permissions for cache directories, which allows local users to execute arbitrary PHP code with additional privileges by leveraging an application with the umask set to 0 and that executes cache entries as code.</value>
+  </description_data>
+  <cwe>
+    <description>
+      <lang>en</lang>
+      <value>CWE-264</value>
+    </description>
+  </cwe>
+  <baseMetricV3>
+    <exploitabilityScore>1.8</exploitabilityScore>
+    <impactScore>5.9</impactScore>
+    <cvssV3>
+      <version>3.0</version>
+      <vectorString>CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H</vectorString>
+      <attackVector>LOCAL</attackVector>
+      <attackComplexity>LOW</attackComplexity>
+      <privilegesRequired>LOW</privilegesRequired>
+      <userInteraction>NONE</userInteraction>
+      <scope>UNCHANGED</scope>
+      <confidentialityImpact>HIGH</confidentialityImpact>
+      <integrityImpact>HIGH</integrityImpact>
+      <availabilityImpact>HIGH</availabilityImpact>
+      <baseScore>7.8</baseScore>
+      <baseSeverity>HIGH</baseSeverity>
+    </cvssV3>
+  </baseMetricV3>
+</CVE>
+<CVE>
+  <package>phpseclib/phpseclib</package>
+  <cve_id>CVE-2021-30130</cve_id>
+  <publishedDate>2021-04-06T15:15Z</publishedDate>
+  <lastModifiedDate>2021-04-20T19:22Z</lastModifiedDate>
+  <description_data>
+    <lang>en</lang>
+    <value>phpseclib before 2.0.31 and 3.x before 3.0.7 mishandles RSA PKCS#1 v1.5 signature verification.</value>
+  </description_data>
+  <cwe>
+    <description>
+      <lang>en</lang>
+      <value>CWE-347</value>
+    </description>
+  </cwe>
+  <baseMetricV3>
+    <exploitabilityScore>3.9</exploitabilityScore>
+    <impactScore>3.6</impactScore>
+    <cvssV3>
+      <version>3.1</version>
+      <vectorString>CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N</vectorString>
+      <attackVector>NETWORK</attackVector>
+      <attackComplexity>LOW</attackComplexity>
+      <privilegesRequired>NONE</privilegesRequired>
+      <userInteraction>NONE</userInteraction>
+      <scope>UNCHANGED</scope>
+      <confidentialityImpact>NONE</confidentialityImpact>
+      <integrityImpact>HIGH</integrityImpact>
+      <availabilityImpact>NONE</availabilityImpact>
+      <baseScore>7.5</baseScore>
+      <baseSeverity>HIGH</baseSeverity>
+    </cvssV3>
+  </baseMetricV3>
+</CVE>
+</Report>
